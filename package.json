@@ -1,0 +1,24 @@
+{
+  "name": "mssql-api",
+  "version": "1.0.0",
+  "description": "NodeJS with MSSQL",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "NodeJS",
+    "MSSQL"
+  ],
+  "author": "Zaki Mohammed",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "mssql": "^6.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.6"
+  }
+}
