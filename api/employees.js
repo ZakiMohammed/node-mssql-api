@@ -16,7 +16,57 @@ const config = {
 };
 const pool = new mssql.ConnectionPool(config);
 
-const get = async (req, res) => {
+router.get('/search', async (req, res) => {
+    try {
+        await pool.connect();
+        const result = await pool.request()
+            .input('Name', req.query.name)
+            .execute(`SearchEmployee`);
+        const employees = result.recordset;
+
+        res.json(employees);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+});
+router.get('/status', async (req, res) => {
+    try {
+        await pool.connect();
+        const result = await pool.request()
+            .output('Count', 0)
+            .output('Max', 0)
+            .output('Min', 0)
+            .output('Average', 0)
+            .output('Sum', 0)
+            .execute(`GetEmployeesStatus`);
+        const status = {
+            Count: +result.output.Count,
+            Max: +result.output.Max,
+            Min: +result.output.Min,
+            Average: +result.output.Average,
+            Sum: +result.output.Sum
+        };
+
+        res.json(status);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+});
+router.get('/summary', async (req, res) => {
+    try {
+        await pool.connect();
+        const result = await pool.request().execute(`GetSalarySummary`);
+        const summary = {
+            Department: result.recordsets[0],
+            Job: result.recordsets[1],
+        };
+
+        res.json(summary);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+});
+router.get('/:id', async (req, res) => {
     try {
         await pool.connect();
         const result = await pool.request()
@@ -34,8 +84,8 @@ const get = async (req, res) => {
     } catch (error) {
         res.status(500).json(error);
     }
-};
-const getAll = async (req, res) => {
+});
+router.get('/', async (req, res) => {
     try {
         await pool.connect();
         const result = await pool.request().query(`SELECT * FROM Employee ORDER BY Id DESC`);
@@ -45,8 +95,40 @@ const getAll = async (req, res) => {
     } catch (error) {
         res.status(500).json(error);
     }
-};
-const create = async (req, res) => {
+});
+router.post('/many', async (req, res) => {
+    try {
+        await pool.connect();
+        const employeesTable = new mssql.Table();
+
+        employeesTable.columns.add('Code', mssql.VarChar(50));
+        employeesTable.columns.add('Name', mssql.VarChar(50));
+        employeesTable.columns.add('Job', mssql.VarChar(50));
+        employeesTable.columns.add('Salary', mssql.Int);
+        employeesTable.columns.add('Department', mssql.VarChar(50));
+
+        const employees = req.body;
+        employees.forEach(employee => {
+            employeesTable.rows.add(
+                employee.Code,
+                employee.Name,
+                employee.Job,
+                employee.Salary,
+                employee.Department
+            )
+        });
+
+        const request = pool.request();
+        request.input('Employees', employeesTable);
+
+        const result = await request.execute('AddEmployees');
+        const newEmployees = result.recordset;
+        res.json(newEmployees);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+});
+router.post('/', async (req, res) => {
     try {
         await pool.connect();
         const result = await pool.request()
@@ -66,8 +148,8 @@ const create = async (req, res) => {
     } catch (error) {
         res.status(500).json(error);
     }
-};
-const update = async (req, res) => {
+});
+router.put('/:id', async (req, res) => {
     try {
         await pool.connect();
         const result = await pool.request()
@@ -104,8 +186,8 @@ const update = async (req, res) => {
     } catch (error) {
         res.status(500).json(error);
     }
-};
-const remove = async (req, res) => {
+});
+router.delete('/:id', async (req, res) => {
     try {
         await pool.connect();
         const result = await pool.request()
@@ -126,13 +208,6 @@ const remove = async (req, res) => {
     } catch (error) {
         res.status(500).json(error);
     }
-};
-
-// register routes
-router.get('/:id', get);
-router.get('/', getAll);
-router.post('/', create);
-router.put('/:id', update);
-router.delete('/:id', remove);
+});
 
 module.exports = router;
