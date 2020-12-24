@@ -6,15 +6,6 @@ GET http://localhost:3000/api/employees
 #### Get Employee
 GET http://localhost:3000/api/employees/1
 
-#### Get Employees Status
-GET http://localhost:3000/api/employees/status
-
-#### Search Employees
-GET http://localhost:3000/api/employees/search?name=jo
-
-#### Employee Summary
-GET http://localhost:3000/api/employees/summary
-
 #### Add Employee
 POST http://localhost:3000/api/employees
 content-type: application/json
@@ -28,35 +19,12 @@ content-type: application/json
     "Department": "Operations"
 }
 
-#### Add Many Employees
-POST http://localhost:3000/api/employees/many
-content-type: application/json
-
-[
-    {
-        "Id": 0,
-        "Code": "CT8100",
-        "Name": "Bruce Banner",
-        "Job": "Salesman",
-        "Salary": 20000,
-        "Department": "Sales"
-    },
-    {
-        "Id": 0,
-        "Code": "CT8200",
-        "Name": "Clint",
-        "Job": "Salesman",
-        "Salary": 20000,
-        "Department": "Sales"
-    }
-]
-
 #### Update Employee
-PUT http://localhost:3000/api/employees/30
+PUT http://localhost:3000/api/employees/32
 content-type: application/json
 
 {
-    "Id": 30,
+    "Id": 32,
     "Code": "CT9000",
     "Name": "Bucky Barns",
     "Job": "Manager",
@@ -65,4 +33,4 @@ content-type: application/json
 }
 
 #### Delete Employee
-DELETE http://localhost:3000/api/employees/30
+DELETE http://localhost:3000/api/employees/32

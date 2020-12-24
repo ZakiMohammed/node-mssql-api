@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.get('/', (req, res) => {
-    res.send('<h1>🤖 NodeJS team up with MSSQL</h1>');
+    res.send('<h1>🤖 Teaming up with NodeJS and SQL Server</h1>');
 });
 
 app.use('/api/employees', require('./api/employees'));

@@ -1,9 +1,7 @@
-# NodeJS team up with MSSQL
+# Teaming up with NodeJS and SQL Server
 
-Starter application to perform CRUD operation with MSSQL using NodeJS.
-___
+Making a smooth connection between NodeJS and MSSQL, and perform the decade old tradition (CRUD).
 
-Packages Required
-```
-npm i express mssql dotenv
-npm i -D nodemon
+Check out the CodeOmelet blog post for this project.
+
+Link: http://codeomelet.com/posts/teaming-up-with-nodejs-and-sql-server
