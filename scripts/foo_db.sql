@@ -39,3 +39,130 @@ INSERT [dbo].[Employee] ([Id], [Code], [Name], [Job], [Salary], [Department]) VA
 INSERT [dbo].[Employee] ([Id], [Code], [Name], [Job], [Salary], [Department]) VALUES (24, N'CT7207', N'Steve Rogers', N'Manager', 20000, N'Operations')
 INSERT [dbo].[Employee] ([Id], [Code], [Name], [Job], [Salary], [Department]) VALUES (25, N'CT7547', N'Tom Holland', N'Manager', 20000, N'Operations')
 SET IDENTITY_INSERT [dbo].[Employee] OFF
+GO
+
+/****** Object:  StoredProcedure [dbo].[SearchEmployee]    Script Date: 12/28/2020 6:53:18 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Zaki Mohammed
+-- Create date: 8:05 PM 5/13/2020
+-- Description:	Search employee by name
+-- =============================================
+CREATE PROCEDURE [dbo].[SearchEmployee]
+	@Name VARCHAR(100)
+AS
+BEGIN
+	SELECT * FROM Employee WHERE LOWER(Name) LIKE '%' + LOWER(@Name) + '%'
+END
+GO
+
+/****** Object:  StoredProcedure [dbo].[GetEmployeesStatus]    Script Date: 12/28/2020 6:53:52 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Zaki Mohammed
+-- Create date: 1:44 AM 9/2/2020
+-- Description:	Get employee records current status
+-- =============================================
+CREATE PROCEDURE [dbo].[GetEmployeesStatus]
+	@Count		INT OUTPUT,
+	@Max		INT OUTPUT,
+	@Min		INT OUTPUT,
+	@Average	INT OUTPUT,
+	@Sum		INT OUTPUT
+AS
+BEGIN
+	SELECT	@Count		= COUNT(1),
+			@Max		= MAX(Salary),
+			@Min		= MIN(Salary),
+			@Average	= AVG(Salary),
+			@Sum		= SUM(Salary)	
+	FROM Employee;
+END
+GO
+
+/****** Object:  StoredProcedure [dbo].[GetSalarySummary]    Script Date: 12/28/2020 6:54:47 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Zaki Mohammed
+-- Create date: 7:46 PM 5/13/2020
+-- Description:	Get salary summary
+-- =============================================
+CREATE PROCEDURE [dbo].[GetSalarySummary]
+AS
+BEGIN
+	-- get department wise salary summary
+	SELECT	
+		Department, 
+		COUNT(1) EmployeeCount, 
+		SUM(Salary) AS Salary, 
+		SUM(Salary) * 12 AS Annual
+	FROM 
+		Employee 
+	GROUP BY 
+		Department 
+	ORDER BY
+		SUM(Salary) DESC;
+
+	-- get job wise salary summary
+	SELECT
+		Job, 
+		COUNT(1) EmployeeCount, 
+		SUM(Salary) AS Salary, 
+		SUM(Salary) * 12 AS Annual 
+	FROM 
+		Employee 
+	GROUP BY 
+		Job 
+	ORDER BY 
+		SUM(Salary) DESC;
+END
+GO
+
+/****** Object:  UserDefinedTableType [dbo].[EmployeeType]    Script Date: 12/28/2020 6:55:46 PM ******/
+CREATE TYPE [dbo].[EmployeeType] AS TABLE(
+	[Code] [varchar](50) NOT NULL,
+	[Name] [varchar](50) NULL,
+	[Job] [varchar](50) NULL,
+	[Salary] [int] NULL,
+	[Department] [varchar](50) NULL
+)
+GO
+
+/****** Object:  StoredProcedure [dbo].[AddEmployees]    Script Date: 12/28/2020 6:55:27 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:		Zaki Mohammed
+-- Create date: 1:18 AM 9/2/2020
+-- Description:	Insert multiple-employees
+-- =============================================
+CREATE PROCEDURE [dbo].[AddEmployees]
+	@Employees EmployeeType READONLY
+AS
+BEGIN
+	DECLARE @lastId INT;
+
+	SET @lastId = (SELECT MAX(Id) AS LastId FROM Employee);
+
+	INSERT INTO Employee (Code, [Name], Job, Salary, Department)
+	SELECT * FROM @Employees;
+
+	SELECT * FROM Employee WHERE Id > @lastId;
+END
+GO
