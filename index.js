@@ -13,6 +13,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/employees', require('./api/employees'));
+app.use('/api/employees-variant', require('./api/employees-variant'));
+app.use('/api/users', require('./api/users'));
 
 app.listen(process.env.PORT, () => {
     console.log(`Server started running on ${process.env.PORT} for ${process.env.NODE_ENV}`);

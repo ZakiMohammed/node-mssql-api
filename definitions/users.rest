@@ -1,0 +1,4 @@
+#### User API
+
+#### Get All Users
+GET http://localhost:3000/api/users

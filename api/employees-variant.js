@@ -1,27 +1,14 @@
 const express = require('express')
-const mssql = require('mssql')
+const { Table, VarChar, Int } = require('mssql')
+const DataAccess = require('../data-access')
 
 const router = express.Router();
 
-const config = {
-    driver: process.env.SQL_DRIVER,
-    server: process.env.SQL_SERVER,
-    database: process.env.SQL_DATABASE,
-    user: process.env.SQL_UID,
-    password: process.env.SQL_PWD,
-    options: {
-        encrypt: false,
-        enableArithAbort: false
-    },
-};
-const pool = new mssql.ConnectionPool(config);
-
 router.get('/search', async (req, res) => {
     try {
-        await pool.connect();
-        const result = await pool.request()
-            .input('Name', req.query.name)
-            .execute(`SearchEmployee`);
+        const result = await DataAccess.execute(`SearchEmployee`, [
+            { name: 'Name', value: req.query.name }
+        ]);
         const employees = result.recordset;
 
         res.json(employees);
@@ -31,14 +18,13 @@ router.get('/search', async (req, res) => {
 });
 router.get('/status', async (req, res) => {
     try {
-        await pool.connect();
-        const result = await pool.request()
-            .output('Count', 0)
-            .output('Max', 0)
-            .output('Min', 0)
-            .output('Average', 0)
-            .output('Sum', 0)
-            .execute(`GetEmployeesStatus`);
+        const result = await DataAccess.execute(`GetEmployeesStatus`, [], [
+            { name: 'Count', value: 0 },
+            { name: 'Max', value: 0 },
+            { name: 'Min', value: 0 },
+            { name: 'Average', value: 0 },
+            { name: 'Sum', value: 0 },
+        ]);
         const status = {
             Count: +result.output.Count,
             Max: +result.output.Max,
@@ -54,8 +40,7 @@ router.get('/status', async (req, res) => {
 });
 router.get('/summary', async (req, res) => {
     try {
-        await pool.connect();
-        const result = await pool.request().execute(`GetSalarySummary`);
+        const result = await DataAccess.execute(`GetSalarySummary`);
         const summary = {
             Department: result.recordsets[0],
             Job: result.recordsets[1],
@@ -68,14 +53,13 @@ router.get('/summary', async (req, res) => {
 });
 router.post('/many', async (req, res) => {
     try {
-        await pool.connect();
-        const employeesTable = new mssql.Table();
+        const employeesTable = new Table();
 
-        employeesTable.columns.add('Code', mssql.VarChar(50));
-        employeesTable.columns.add('Name', mssql.VarChar(50));
-        employeesTable.columns.add('Job', mssql.VarChar(50));
-        employeesTable.columns.add('Salary', mssql.Int);
-        employeesTable.columns.add('Department', mssql.VarChar(50));
+        employeesTable.columns.add('Code', VarChar(50));
+        employeesTable.columns.add('Name', VarChar(50));
+        employeesTable.columns.add('Job', VarChar(50));
+        employeesTable.columns.add('Salary', Int);
+        employeesTable.columns.add('Department', VarChar(50));
 
         const employees = req.body;
         employees.forEach(employee => {
@@ -88,23 +72,25 @@ router.post('/many', async (req, res) => {
             )
         });
 
-        const request = pool.request();
+        await DataAccess.connect();
+
+        const request = DataAccess.pool.request();
         request.input('Employees', employeesTable);
 
         const result = await request.execute('AddEmployees');
         const newEmployees = result.recordset;
         res.json(newEmployees);
     } catch (error) {
+        console.log(error)
         res.status(500).json(error);
     }
 });
 
 router.get('/:id', async (req, res) => {
     try {
-        await pool.connect();
-        const result = await pool.request()
-            .input('Id', req.params.id)
-            .query(`SELECT * FROM Employee WHERE Id = @Id`);
+        const result = await DataAccess.query(`SELECT * FROM Employee WHERE Id = @Id`, [
+            { name: 'Id', value: req.params.id }
+        ]);
         const employee = result.recordset.length ? result.recordset[0] : null;
 
         if (employee) {
@@ -120,29 +106,43 @@ router.get('/:id', async (req, res) => {
 });
 router.get('/', async (req, res) => {
     try {
-        await pool.connect();
-        const result = await pool.request().query(`SELECT * FROM Employee ORDER BY Id DESC`);
+        const result = await DataAccess.query(`SELECT * FROM Employee ORDER BY Id DESC`);
         const employees = result.recordset;
 
         res.json(employees);
     } catch (error) {
+        console.log(error)
         res.status(500).json(error);
     }
 });
 router.post('/', async (req, res) => {
     try {
-        await pool.connect();
-        const result = await pool.request()
-            .input('Code', req.body.Code)
-            .input('Salary', req.body.Salary)
-            .input('Job', req.body.Job)
-            .input('Department', req.body.Department)
-            .input('Name', req.body.Name)
-            .query(`
+        /*
+        // passing input as arrays
+        const result = await DataAccess.query(
+            `
                 INSERT INTO Employee (Code, Salary, Job, Department, Name) 
                 OUTPUT inserted.Id 
                 VALUES (@Code, @Salary, @Job, @Department, @Name);
-            `);
+            `,
+            [
+                { name: 'Code', value: req.body.Code },
+                { name: 'Salary', value: req.body.Salary },
+                { name: 'Job', value: req.body.Job },
+                { name: 'Department', value: req.body.Department },
+                { name: 'Name', value: req.body.Name },
+            ]
+        );
+        */
+
+        // passing input as entity
+        const result = await DataAccess.queryEntity(
+            `
+                INSERT INTO Employee (Code, Salary, Job, Department, Name) 
+                OUTPUT inserted.Id 
+                VALUES (@Code, @Salary, @Job, @Department, @Name);
+            `, req.body
+        );
         const employee = req.body;
         employee.Id = result.recordset[0].Id;
         res.json(employee);
@@ -159,21 +159,14 @@ router.put('/:id', async (req, res) => {
             return;
         }
 
-        await pool.connect();
-        const result = await pool.request()
-            .input('Id', req.params.id)
-            .query(`SELECT * FROM Employee WHERE Id = @Id`);
+        const result = await DataAccess.query(`SELECT * FROM Employee WHERE Id = @Id`, [
+            { name: 'Id', value: req.params.id }
+        ]);
 
         let employee = result.recordset.length ? result.recordset[0] : null;
         if (employee) {
-            await pool.request()
-                .input('Id', req.params.id)
-                .input('Code', req.body.Code)
-                .input('Salary', req.body.Salary)
-                .input('Job', req.body.Job)
-                .input('Department', req.body.Department)
-                .input('Name', req.body.Name)
-                .query(`
+            await DataAccess.queryEntity(
+                `
                     UPDATE Employee SET
                         Code = @Code, 
                         Salary = @Salary, 
@@ -181,7 +174,8 @@ router.put('/:id', async (req, res) => {
                         Department = @Department, 
                         Name = @Name
                     WHERE Id = @Id;
-                `);
+                `, req.body
+            );
 
             employee = { ...employee, ...req.body };
 
@@ -197,17 +191,16 @@ router.put('/:id', async (req, res) => {
 });
 router.delete('/:id', async (req, res) => {
     try {
-        await pool.connect();
-        const result = await pool.request()
-            .input('Id', req.params.id)
-            .query(`SELECT * FROM Employee WHERE Id = @Id`);
+        const result = await DataAccess.query(`SELECT * FROM Employee WHERE Id = @Id`, [
+            { name: 'Id', value: req.params.id }
+        ]);
 
         let employee = result.recordset.length ? result.recordset[0] : null;
         if (employee) {
-            await pool.request()
-                .input('Id', req.params.id)
-                .query(`DELETE FROM Employee WHERE Id = @Id;`);
-            res.json(employee);
+            await DataAccess.query(`DELETE FROM Employee WHERE Id = @Id;`, [
+                { name: 'Id', value: req.params.id }
+            ]);
+            res.json({});
         } else {
             res.status(404).json({
                 message: 'Record not found'
