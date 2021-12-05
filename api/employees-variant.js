@@ -1,5 +1,4 @@
 const express = require('express')
-const { Table, VarChar, Int } = require('mssql')
 const DataAccess = require('../data-access')
 
 const router = express.Router();
@@ -53,31 +52,18 @@ router.get('/summary', async (req, res) => {
 });
 router.post('/many', async (req, res) => {
     try {
-        const employeesTable = new Table();
-
-        employeesTable.columns.add('Code', VarChar(50));
-        employeesTable.columns.add('Name', VarChar(50));
-        employeesTable.columns.add('Job', VarChar(50));
-        employeesTable.columns.add('Salary', Int);
-        employeesTable.columns.add('Department', VarChar(50));
-
         const employees = req.body;
-        employees.forEach(employee => {
-            employeesTable.rows.add(
-                employee.Code,
-                employee.Name,
-                employee.Job,
-                employee.Salary,
-                employee.Department
-            )
-        });
+        const employeesTable = DataAccess.generateTable([
+            { name: 'Code', type: DataAccess.mssql.TYPES.VarChar(50) },
+            { name: 'Name', type: DataAccess.mssql.TYPES.VarChar(50) },
+            { name: 'Job', type: DataAccess.mssql.TYPES.VarChar(50) },
+            { name: 'Salary', type: DataAccess.mssql.TYPES.Int },
+            { name: 'Department', type: DataAccess.mssql.TYPES.VarChar(50) }
+        ], employees);
 
-        await DataAccess.connect();
-
-        const request = DataAccess.pool.request();
-        request.input('Employees', employeesTable);
-
-        const result = await request.execute('AddEmployees');
+        const result = await DataAccess.execute(`AddEmployees`, [
+            { name: 'Employees', value: employeesTable }
+        ]);
         const newEmployees = result.recordset;
         res.json(newEmployees);
     } catch (error) {

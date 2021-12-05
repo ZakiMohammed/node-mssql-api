@@ -1,4 +1,4 @@
-const { ConnectionPool } = require('mssql')
+const mssql = require('mssql')
 
 const poolConfig = () => ({
     driver: process.env.SQL_DRIVER,
@@ -45,10 +45,11 @@ const assignParams = (request, inputs, outputs) => {
 class DataAccess {
 
     static pool;
+    static mssql = mssql;
 
     static async connect() {
         if (!DataAccess.pool) {
-            DataAccess.pool = new ConnectionPool(poolConfig());
+            DataAccess.pool = new mssql.ConnectionPool(poolConfig());
         }
         if (!DataAccess.pool.connected) {
             await DataAccess.pool.connect();
@@ -77,6 +78,26 @@ class DataAccess {
     static async executeEntity(command, entity, outputs = []) {
         const inputs = fetchParams(entity);
         return DataAccess.execute(command, inputs, outputs);
+    }
+
+    static generateTable(columns, entities) {
+        const table = new mssql.Table();
+
+        columns.forEach(column => {
+            if (column && typeof column === 'object' && column.name && column.type) {
+                if (column.hasOwnProperty('options')) {
+                    table.columns.add(column.name, column.type, column.options);
+                } else {
+                    table.columns.add(column.name, column.type);
+                }
+            }
+        });
+
+        entities.forEach(entity => {
+            table.rows.add(...columns.map(i => entity[i.name]));
+        });
+
+        return table;
     }
 }
 
