@@ -27,16 +27,13 @@ const fetchParams = entity => {
 };
 
 const assignParams = (request, inputs, outputs) => {
-    [inputs, outputs].forEach((operations, index) => {
-        operations.forEach(operation => {
-            if (operation.type) {
-                index === 0 ?
-                    request.input(operation.name, operation.type, operation.value) :
-                    request.output(operation.name, operation.type, operation.value);
+    [inputs, outputs].forEach((params, index) => {
+        const operation = index === 0 ? 'input' : 'output';
+        params.forEach(param => {
+            if (param.type) {
+                request[operation](param.name, param.type, param.value);
             } else {
-                index === 0 ?
-                    request.input(operation.name, operation.value) :
-                    request.output(operation.name, operation.value);
+                request[operation](param.name, param.value);
             }
         });
     });
