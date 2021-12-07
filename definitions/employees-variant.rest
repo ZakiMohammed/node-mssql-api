@@ -65,4 +65,4 @@ content-type: application/json
 }
 
 #### Delete Employee
-DELETE http://localhost:3000/api/employees-variant/56
+DELETE http://localhost:3000/api/employees-variant/58

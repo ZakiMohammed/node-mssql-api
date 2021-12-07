@@ -1,11 +1,11 @@
 const express = require('express')
-const DataAccess = require('../data-access')
+const dataAccess = require('../data-access')
 
 const router = express.Router();
 
 router.get('/search', async (req, res) => {
     try {
-        const result = await DataAccess.execute(`SearchEmployee`, [
+        const result = await dataAccess.execute(`SearchEmployee`, [
             { name: 'Name', value: req.query.name }
         ]);
         const employees = result.recordset;
@@ -17,7 +17,7 @@ router.get('/search', async (req, res) => {
 });
 router.get('/status', async (req, res) => {
     try {
-        const result = await DataAccess.execute(`GetEmployeesStatus`, [], [
+        const result = await dataAccess.execute(`GetEmployeesStatus`, [], [
             { name: 'Count', value: 0 },
             { name: 'Max', value: 0 },
             { name: 'Min', value: 0 },
@@ -39,7 +39,7 @@ router.get('/status', async (req, res) => {
 });
 router.get('/summary', async (req, res) => {
     try {
-        const result = await DataAccess.execute(`GetSalarySummary`);
+        const result = await dataAccess.execute(`GetSalarySummary`);
         const summary = {
             Department: result.recordsets[0],
             Job: result.recordsets[1],
@@ -53,15 +53,15 @@ router.get('/summary', async (req, res) => {
 router.post('/many', async (req, res) => {
     try {
         const employees = req.body;
-        const employeesTable = DataAccess.generateTable([
-            { name: 'Code', type: DataAccess.mssql.TYPES.VarChar(50) },
-            { name: 'Name', type: DataAccess.mssql.TYPES.VarChar(50) },
-            { name: 'Job', type: DataAccess.mssql.TYPES.VarChar(50) },
-            { name: 'Salary', type: DataAccess.mssql.TYPES.Int },
-            { name: 'Department', type: DataAccess.mssql.TYPES.VarChar(50) }
+        const employeesTable = dataAccess.generateTable([
+            { name: 'Code', type: dataAccess.mssql.TYPES.VarChar(50) },
+            { name: 'Name', type: dataAccess.mssql.TYPES.VarChar(50) },
+            { name: 'Job', type: dataAccess.mssql.TYPES.VarChar(50) },
+            { name: 'Salary', type: dataAccess.mssql.TYPES.Int },
+            { name: 'Department', type: dataAccess.mssql.TYPES.VarChar(50) }
         ], employees);
 
-        const result = await DataAccess.execute(`AddEmployees`, [
+        const result = await dataAccess.execute(`AddEmployees`, [
             { name: 'Employees', value: employeesTable }
         ]);
         const newEmployees = result.recordset;
@@ -74,7 +74,7 @@ router.post('/many', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
-        const result = await DataAccess.query(`SELECT * FROM Employee WHERE Id = @Id`, [
+        const result = await dataAccess.query(`SELECT * FROM Employee WHERE Id = @Id`, [
             { name: 'Id', value: req.params.id }
         ]);
         const employee = result.recordset.length ? result.recordset[0] : null;
@@ -92,7 +92,7 @@ router.get('/:id', async (req, res) => {
 });
 router.get('/', async (req, res) => {
     try {
-        const result = await DataAccess.query(`SELECT * FROM Employee ORDER BY Id DESC`);
+        const result = await dataAccess.query(`SELECT * FROM Employee ORDER BY Id DESC`);
         const employees = result.recordset;
 
         res.json(employees);
@@ -122,7 +122,7 @@ router.post('/', async (req, res) => {
         */
 
         // passing input as entity
-        const result = await DataAccess.queryEntity(
+        const result = await dataAccess.queryEntity(
             `
                 INSERT INTO Employee (Code, Salary, Job, Department, Name) 
                 OUTPUT inserted.Id 
@@ -145,13 +145,13 @@ router.put('/:id', async (req, res) => {
             return;
         }
 
-        const result = await DataAccess.query(`SELECT * FROM Employee WHERE Id = @Id`, [
+        const result = await dataAccess.query(`SELECT * FROM Employee WHERE Id = @Id`, [
             { name: 'Id', value: req.params.id }
         ]);
 
         let employee = result.recordset.length ? result.recordset[0] : null;
         if (employee) {
-            await DataAccess.queryEntity(
+            await dataAccess.queryEntity(
                 `
                     UPDATE Employee SET
                         Code = @Code, 
@@ -177,13 +177,13 @@ router.put('/:id', async (req, res) => {
 });
 router.delete('/:id', async (req, res) => {
     try {
-        const result = await DataAccess.query(`SELECT * FROM Employee WHERE Id = @Id`, [
+        const result = await dataAccess.query(`SELECT * FROM Employee WHERE Id = @Id`, [
             { name: 'Id', value: req.params.id }
         ]);
 
         let employee = result.recordset.length ? result.recordset[0] : null;
         if (employee) {
-            await DataAccess.query(`DELETE FROM Employee WHERE Id = @Id;`, [
+            await dataAccess.query(`DELETE FROM Employee WHERE Id = @Id;`, [
                 { name: 'Id', value: req.params.id }
             ]);
             res.json({});

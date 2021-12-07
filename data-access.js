@@ -1,5 +1,7 @@
 const mssql = require('mssql')
 
+let pool;
+
 const poolConfig = () => ({
     driver: process.env.SQL_DRIVER,
     server: process.env.SQL_SERVER,
@@ -37,65 +39,69 @@ const assignParams = (request, inputs, outputs) => {
             }
         });
     });
-}
+};
 
-class DataAccess {
+const run = async (name, command, inputs = [], outputs = []) => {
+    await connect();
+    const request = pool.request();
+    assignParams(request, inputs, outputs);
+    return request[name](command);
+};
 
-    static pool;
-    static mssql = mssql;
-
-    static async connect() {
-        if (!DataAccess.pool) {
-            DataAccess.pool = new mssql.ConnectionPool(poolConfig());
-        }
-        if (!DataAccess.pool.connected) {
-            await DataAccess.pool.connect();
-        }
+const connect = async () => {
+    if (!pool) {
+        pool = new mssql.ConnectionPool(poolConfig());
     }
-
-    static async query(command, inputs = [], outputs = []) {
-        await DataAccess.connect();
-        const request = DataAccess.pool.request();
-        assignParams(request, inputs, outputs);
-        return request.query(command);
+    if (!pool.connected) {
+        await pool.connect();
     }
+};
 
-    static async queryEntity(command, entity, outputs = []) {
-        const inputs = fetchParams(entity);
-        return DataAccess.query(command, inputs, outputs);
-    }
+const query = async (command, inputs = [], outputs = []) => {
+    return run('query', command, inputs, outputs);
+};
 
-    static async execute(procedure, inputs = [], outputs = []) {
-        await DataAccess.connect();
-        const request = DataAccess.pool.request();
-        assignParams(request, inputs, outputs);
-        return request.execute(procedure);
-    }
+const queryEntity = async (command, entity, outputs = []) => {
+    const inputs = fetchParams(entity);
+    return run('query', command, inputs, outputs);
+};
 
-    static async executeEntity(command, entity, outputs = []) {
-        const inputs = fetchParams(entity);
-        return DataAccess.execute(command, inputs, outputs);
-    }
+const execute = async (command, inputs = [], outputs = []) => {
+    return run('execute', command, inputs, outputs);
+};
 
-    static generateTable(columns, entities) {
-        const table = new mssql.Table();
+const executeEntity = async (command, entity, outputs = []) => {
+    const inputs = fetchParams(entity);
+    return run('execute', command, inputs, outputs);
+};
 
-        columns.forEach(column => {
-            if (column && typeof column === 'object' && column.name && column.type) {
-                if (column.hasOwnProperty('options')) {
-                    table.columns.add(column.name, column.type, column.options);
-                } else {
-                    table.columns.add(column.name, column.type);
-                }
+const generateTable = (columns, entities) => {
+    const table = new mssql.Table();
+
+    columns.forEach(column => {
+        if (column && typeof column === 'object' && column.name && column.type) {
+            if (column.hasOwnProperty('options')) {
+                table.columns.add(column.name, column.type, column.options);
+            } else {
+                table.columns.add(column.name, column.type);
             }
-        });
+        }
+    });
 
-        entities.forEach(entity => {
-            table.rows.add(...columns.map(i => entity[i.name]));
-        });
+    entities.forEach(entity => {
+        table.rows.add(...columns.map(i => entity[i.name]));
+    });
 
-        return table;
-    }
-}
+    return table;
+};
 
-module.exports = DataAccess;
+module.exports = {
+    pool,
+    mssql,
+    connect,
+    query,
+    queryEntity,
+    execute,
+    executeEntity,
+    generateTable
+};
