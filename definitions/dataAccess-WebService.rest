@@ -1,0 +1,134 @@
+#### WEB SERVICE tAPI
+
+#### GOING FOR CURD AND MULTI CONDINTIOAL SELCETION
+#### Get All Records
+POST http://localhost:3000/api/webservice/getAll
+content-type: application/json
+{
+    "Table": "Employee",
+    "order" : "DESC"
+}
+
+#### Get One Record
+POST http://localhost:3000/api/webservice/getOne/1
+content-type: application/json
+{
+    "Table": "Employee",
+  	"operator" : "="
+}
+
+#### Add Record
+POST http://localhost:3000/api/webservice/AddRecord
+content-type: application/json
+//Wwe dont USE Id for adding new record through this URL
+{
+    "Code": "CT2007",
+    "Name": "Tom Holland",
+    "Job": "Actor",
+    "Salary": 1000000,
+    "Department": "Hollywood",
+      "operator" : "=",
+  "Table": "Employee"
+}
+
+#### Update Record
+PUT http://localhost:3000/api/webservice/update/44
+content-type: application/json
+{
+    "Id": 44,
+    "Code": "CT2004",
+    "Name": "David Beckham",
+    "Job": "Winger",
+    "Salary": 3500000,
+    "Department": "ManchesterUnited",
+  "operator" : "=",
+  "Table": "Employee"
+}  
+
+#### Delete Record
+POST http://localhost:3000/api/webservice/delete/42
+content-type: application/json
+{
+    "Table": "Employee",
+    "operator" : "="
+}
+
+
+#### NEW CUSTOM
+# MULTI CONDINTIOAL SELCETION
+
+POST http://localhost:3000/api/webservice/multiCond
+content-type: application/json
+{
+    "Table": "Employee"
+}
+
+content-type: application/json
+{
+    "order" : "DESC",
+    "Table": "Employee"
+}
+
+content-type: application/json
+{
+   "Id": 44,
+  "operator" : "=",
+  "Table": "Employee"
+}
+
+
+content-type: application/json
+
+{
+ "Id": 44,
+    "Code": "CT2004",
+    "Name": "David Beckham",
+    "Salary": 3500000,
+  "operator" : "=",
+  "Table": "Employee"
+}
+content-type: application/json
+
+{
+    "Id": 44,
+    "Code": "CT2004",
+    "Name": "David Beckham",
+    "Job": "Winger",
+    "Salary": 3500000,
+    "Department": "ManchesterUnited",
+  "operator" : "=",
+  "Table": "Employee"
+}
+
+
+#### Get Employees Status
+GET http://localhost:3000/api/webservice/Employee/status
+
+#### Search Employees
+GET  http://localhost:3000/api/webservice/Employee/search?name=Ali Askari
+
+#### Employee Summary
+GET http://localhost:3000/api/webservice/Employee/summary
+
+#### Add Many Employees
+POST http://localhost:3000/api/webservice/Employee/many
+content-type: application/json
+
+[
+    {
+        "Id": 0,
+        "Code": "CT8400",
+        "Name": "iran irani",
+        "Job": "Salesman",
+        "Salary": 20000,
+        "Department": "Sales"
+    },
+    {
+        "Id": 0,
+        "Code": "CT8500",
+        "Name": "shirazi",
+        "Job": "Salesman",
+        "Salary": 20000,
+        "Department": "Sales"
+    }
+]
